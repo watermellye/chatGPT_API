@@ -124,13 +124,14 @@ async def chatGptMethod(bot, ev):
     
     ret = await _chatGptMethod(msg, settings.get(uid, None), user_context)
 
-    if "Fail." not in ret:
+    if "Fail." not in ret and len(ret) < 1000:
         context[uid] = {
             "context": [{"role": "user", "content": msg}, {"role": "assistant", "content": ret}],
             "time": getNowtime()
         }
-        saveContext(context)
-
+    else:
+        context.pop(uid, None)
+    saveContext(context)
     await bot.send(ev, ret, at_sender=True)
 
 
@@ -140,7 +141,7 @@ async def chatGptSetting(bot, ev):
     msg = str(ev.message.extract_plain_text()).strip()
     outp = []
 
-    if len(msg) > 32:
+    if len(msg) > 128:
         await bot.finish(ev, "太长力！")
     settings = getSettings()
 
