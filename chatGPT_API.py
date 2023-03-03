@@ -117,11 +117,15 @@ async def _chatGptMethod(prompt: str, setting: str = None, context: list = None)
 async def chatGptMethod(bot, ev):
     uid = str(ev.user_id)
     msg = str(ev.message.extract_plain_text()).strip()
+
+    if len(msg) > 1024:
+        await bot.finish(ev, "太长力！")
+
     settings = getSettings()
 
     context = getContext()
     user_context = context[uid]["context"] if (getNowtime() - context.get(uid, {}).get("time", -1) <= 300) else None
-    
+
     ret = await _chatGptMethod(msg, settings.get(uid, None), user_context)
 
     if "Fail." not in ret and len(ret) < 1000:
@@ -145,7 +149,9 @@ async def chatGptSetting(bot, ev):
         await bot.finish(ev, "太长力！")
     settings = getSettings()
 
-    if len(msg) and msg not in ["重置", "清空"]:
+    reset_word_list = ["重置", "清空"]
+
+    if len(msg) and msg not in reset_word_list:
         if uid in settings:
             outp.append(f'chat的原角色设定为：{settings[uid]}')
         settings[uid] = msg
@@ -155,7 +161,7 @@ async def chatGptSetting(bot, ev):
     else:
         if uid in settings:
             outp.append(f'chat的当前角色设定为：{settings[uid]}')
-            if msg == "重置":
+            if msg in reset_word_list:
                 settings.pop(uid)
                 saveSettings(settings)
                 outp.append(f'已重置为默认角色设定')
